@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     yandex_folder_id: str = ""
     yandex_model: str = DEFAULT_YANDEX_MODEL
     yandex_base_url: str = DEFAULT_YANDEX_BASE_URL
+    yandex_max_output_tokens: int = Field(default=12_000, ge=1)
 
     max_chars_for_analysis: int = Field(default=MAX_CHARS_FOR_ANALYSIS, ge=1)
     soft_char_limit: int = Field(default=SOFT_CHAR_LIMIT, ge=1)

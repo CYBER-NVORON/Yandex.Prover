@@ -3,9 +3,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from app.schemas import AnalysisResult
-
-
 AUDIENCE_RULES: dict[str, str] = {
     "учитель": "Фокус: тема, цель, гипотеза, задачи, методы, вывод, источники, самостоятельность и понятность. Вопросы задаёт учитель. Не используй слова инвестор, бизнес-ценность, рынок.",
     "преподаватель": "Фокус: методология, структура, доказательность, источники и выводы.",
@@ -44,7 +41,6 @@ class PromptService:
         material_type: str,
         audience_type: str,
     ) -> str:
-        schema = json.dumps(AnalysisResult.model_json_schema(), ensure_ascii=False)
         prompt_parts = [
             self._load("structure_prompt.txt"),
             self._load("claims_prompt.txt"),
@@ -62,8 +58,8 @@ class PromptService:
             f"Файл: {filename}",
             f"Тип материала: {material_type}",
             f"Аудитория: {audience_type}",
-            "JSON schema AnalysisResult:",
-            schema,
+            "Контракт JSON AnalysisResult:",
+            self._compact_output_contract(),
             "Текст материала:",
             f'"""\n{text}\n"""',
         ]
@@ -88,3 +84,101 @@ class PromptService:
             if key in normalized:
                 return f"Правила для типа материала '{material_type}': {rules}"
         return f"Правила для типа материала '{material_type}': оцени структуру, тезисы, доказательства, вывод и готовность к вопросам."
+
+    def _compact_output_contract(self) -> str:
+        return json.dumps(
+            {
+                "id": "analysis_yandex",
+                "filename": "string",
+                "material_type": "string",
+                "audience_type": "string",
+                "provider_name": "yandex",
+                "provider_model": "string",
+                "provider_response_id": None,
+                "is_mock": False,
+                "title": "string",
+                "created_at": "ISO datetime string",
+                "persuasiveness_score": "0..100 integer",
+                "scoring_breakdown": {
+                    "clarity_score": "0..100 integer",
+                    "structure_score": "0..100 integer",
+                    "argument_score": "0..100 integer",
+                    "evidence_score": "0..100 integer",
+                    "audience_score": "0..100 integer",
+                    "question_readiness_score": "0..100 integer",
+                    "explanation": "1 short sentence",
+                },
+                "summary": "2 short sentences",
+                "main_idea": "1 short paragraph",
+                "strengths": ["3-5 short strings"],
+                "weaknesses": [
+                    {
+                        "problem": "string",
+                        "why_problem": "string",
+                        "audience_signal": "string",
+                        "fix": "string",
+                    }
+                ],
+                "risks": ["2-4 short strings"],
+                "warnings": [],
+                "structure_analysis": {
+                    "main_idea": "string",
+                    "goal": "string",
+                    "target_audience": "string",
+                    "structure_summary": "2 short sentences",
+                    "logic_quality_score": "0..100 integer",
+                    "clarity_score": "0..100 integer",
+                    "problems": ["0-4 short strings"],
+                    "suggestions": ["0-4 short strings"],
+                },
+                "claims": [
+                    {
+                        "id": "claim_1",
+                        "text": "string",
+                        "claim_type": "fact|number|comparison|causality|generalization|opinion|definition|unsupported_conclusion",
+                        "location": "short location",
+                        "needs_evidence": True,
+                        "evidence_status": "supported_by_text|needs_source|weak_argument|too_strong|unverifiable_from_text|ok",
+                        "risk_level": "low|medium|high",
+                        "explanation": "short string",
+                        "recommendation": "short string",
+                        "suggested_rewrite": "short string",
+                    }
+                ],
+                "recommendations": [
+                    {
+                        "id": "rec_1",
+                        "priority": "low|medium|high",
+                        "category": "string",
+                        "problem": "string",
+                        "action": "string",
+                        "expected_effect": "string",
+                    }
+                ],
+                "audience_questions": [
+                    {
+                        "id": "question_1",
+                        "question": "string",
+                        "asked_by": "string",
+                        "category": "Вся работа: ... | Проблемное место: ...",
+                        "why_asked": "string",
+                        "risk_level": "low|medium|high",
+                        "suggested_answer": "string",
+                        "how_to_improve_material": "string",
+                    }
+                ],
+                "improvement_plan": {
+                    "quick_fixes_30_min": ["2-4 short strings"],
+                    "improvements_2_hours": ["2-4 short strings"],
+                    "final_polish": ["2-4 short strings"],
+                },
+                "stress_test": {
+                    "most_dangerous_question": "string",
+                    "why_dangerous": "string",
+                    "exposed_weakness": "string",
+                    "suggested_answer": "string",
+                    "what_to_add": "string",
+                },
+            },
+            ensure_ascii=False,
+        )

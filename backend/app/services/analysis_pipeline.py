@@ -17,6 +17,7 @@ def build_provider(settings: Settings | None = None) -> LLMProvider:
             folder_id=settings.yandex_folder_id,
             model=settings.yandex_model,
             base_url=settings.yandex_base_url,
+            max_output_tokens=settings.yandex_max_output_tokens,
             fallback_provider=MockLLMProvider() if settings.allow_mock_fallback else None,
         )
     raise LLMProviderError(f"Неизвестный LLM_PROVIDER: {settings.llm_provider}. Используйте mock или yandex.")

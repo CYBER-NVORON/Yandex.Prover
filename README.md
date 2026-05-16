@@ -42,6 +42,7 @@ YANDEX_API_KEY=
 YANDEX_FOLDER_ID=
 YANDEX_MODEL=aliceai-llm/latest
 YANDEX_BASE_URL=https://rest-assistant.api.cloud.yandex.net/v1
+YANDEX_MAX_OUTPUT_TOKENS=12000
 
 MAX_CHARS_FOR_ANALYSIS=120000
 SOFT_CHAR_LIMIT=50000
@@ -73,6 +74,7 @@ YANDEX_API_KEY=...
 YANDEX_FOLDER_ID=...
 YANDEX_MODEL=aliceai-llm/latest
 YANDEX_BASE_URL=https://rest-assistant.api.cloud.yandex.net/v1
+YANDEX_MAX_OUTPUT_TOKENS=12000
 ```
 
 Backend формирует model URI:
@@ -82,6 +84,7 @@ gpt://{YANDEX_FOLDER_ID}/{YANDEX_MODEL}
 ```
 
 Для Responses API используется configurable `YANDEX_BASE_URL`; дефолт должен оставаться `https://rest-assistant.api.cloud.yandex.net/v1`.
+Если модель возвращает обрезанный JSON, увеличьте `YANDEX_MAX_OUTPUT_TOKENS` или повторите анализ с меньшим документом. Дефолт backend — `12000`.
 
 В Yandex Cloud нужны роли:
 

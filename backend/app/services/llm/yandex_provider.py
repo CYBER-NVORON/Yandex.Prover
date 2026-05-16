@@ -30,6 +30,7 @@ class YandexAIProvider(LLMProvider):
         fallback_provider: LLMProvider | None = None,
         client: Any | None = None,
         prompt_service: PromptService | None = None,
+        max_output_tokens: int = 12_000,
     ) -> None:
         self.api_key = api_key
         self.folder_id = folder_id
@@ -39,6 +40,7 @@ class YandexAIProvider(LLMProvider):
         self.fallback_provider = fallback_provider
         self._client = client
         self.prompt_service = prompt_service or PromptService()
+        self.max_output_tokens = max_output_tokens
 
     def analyze_material(
         self,
@@ -73,7 +75,7 @@ class YandexAIProvider(LLMProvider):
                     }
                 ],
                 temperature=0.3,
-                max_output_tokens=6000,
+                max_output_tokens=self.max_output_tokens,
             )
             llm_response = self._build_llm_response(response)
             result = self.parse_analysis_json(self._extract_json(llm_response.text))
@@ -200,10 +202,28 @@ class YandexAIProvider(LLMProvider):
                 return candidate
             except json.JSONDecodeError as exc:
                 snippet = cleaned[:500].replace("\n", " ")
+                if self._looks_like_truncated_json(cleaned):
+                    raise InvalidLLMResponseError(
+                        "Yandex AI не успел вернуть полный JSON: ответ был обрезан. "
+                        "Попробуйте повторить анализ или увеличьте YANDEX_MAX_OUTPUT_TOKENS. "
+                        f"Начало ответа: {snippet}"
+                    ) from exc
                 raise InvalidLLMResponseError(f"Yandex AI вернул невалидный JSON. Начало ответа: {snippet}") from exc
 
         snippet = cleaned[:500].replace("\n", " ")
+        if cleaned.startswith("{"):
+            raise InvalidLLMResponseError(
+                "Yandex AI не успел вернуть полный JSON: ответ был обрезан. "
+                "Попробуйте повторить анализ или увеличьте YANDEX_MAX_OUTPUT_TOKENS. "
+                f"Начало ответа: {snippet}"
+            )
         raise InvalidLLMResponseError(f"Yandex AI ответил без JSON-объекта. Начало ответа: {snippet}")
+
+    def _looks_like_truncated_json(self, text: str) -> bool:
+        stripped = text.rstrip()
+        if stripped.startswith("{") and not stripped.endswith("}"):
+            return True
+        return stripped.count("{") > stripped.count("}")
 
     def _fallback_or_raise(
         self,

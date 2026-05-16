@@ -607,4 +607,3 @@ def _looks_like_fio(line: str) -> bool:
     if re.fullmatch(r"[А-ЯЁ][а-яё-]+(?:\s+[А-ЯЁ][а-яё-]+){1,2}", stripped):
         return True
     return False
-
