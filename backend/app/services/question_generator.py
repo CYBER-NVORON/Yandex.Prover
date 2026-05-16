@@ -11,11 +11,12 @@ def build_audience_questions(
     weaknesses: list[Weakness],
     audience_type: str,
     material_type: str,
+    audience_knowledge_level: int = 3,
 ) -> list[AudienceQuestion]:
     """Build audience questions for the full material and its weak spots.
 
     Yandex mode asks the model to generate questions from the whole submitted
-    context. Mock mode is deterministic, so it synthesizes questions from the
+    context. Local test mode is deterministic, so it synthesizes questions from the
     analysis artifacts we already have: material type, audience type, risky
     claims and weaknesses. This keeps the demo local without pretending to
     verify external facts.
@@ -35,6 +36,7 @@ def build_audience_questions(
             is_teacher=is_teacher,
             is_pitch=is_pitch,
             is_academic=is_academic,
+            audience_knowledge_level=audience_knowledge_level,
         )
     )
     questions.extend(
@@ -42,6 +44,7 @@ def build_audience_questions(
             question_ids=question_ids,
             claims=claims,
             asked_by=asked_by,
+            audience_knowledge_level=audience_knowledge_level,
         )
     )
     questions.extend(
@@ -62,6 +65,7 @@ def _whole_work_questions(
     is_teacher: bool,
     is_pitch: bool,
     is_academic: bool,
+    audience_knowledge_level: int,
 ) -> list[AudienceQuestion]:
     questions = [
         AudienceQuestion(
@@ -122,6 +126,46 @@ def _whole_work_questions(
             ]
         )
 
+    if audience_knowledge_level <= 2:
+        questions.append(
+            AudienceQuestion(
+                id=f"question_{next(question_ids)}",
+                question="Какие термины нужно объяснить человеку, который впервые слышит тему?",
+                asked_by=asked_by,
+                category="Вся работа: понятность для новичков",
+                why_asked="Неподготовленная аудитория может потерять главную мысль из-за терминов, даже если идея сильная.",
+                risk_level="medium",
+                suggested_answer="Назвать 2-3 ключевых термина простыми словами и связать их с примером из материала.",
+                how_to_improve_material="Добавить короткое объяснение сложных терминов при первом упоминании.",
+            )
+        )
+
+    if audience_knowledge_level >= 4:
+        questions.extend(
+            [
+                AudienceQuestion(
+                    id=f"question_{next(question_ids)}",
+                    question="Почему выбранный метод подходит лучше возможных альтернатив?",
+                    asked_by=asked_by,
+                    category="Вся работа: методология",
+                    why_asked="Подготовленная аудитория чаще проверяет не только вывод, но и обоснование метода.",
+                    risk_level="high" if is_academic else "medium",
+                    suggested_answer="Показать, какую задачу решает метод и какие ограничения у альтернатив.",
+                    how_to_improve_material="Добавить короткое обоснование метода и границы его применимости.",
+                ),
+                AudienceQuestion(
+                    id=f"question_{next(question_ids)}",
+                    question="Какие альтернативные объяснения или решения вы рассматривали?",
+                    asked_by=asked_by,
+                    category="Вся работа: альтернативы",
+                    why_asked="Экспертная аудитория проверяет, не построен ли вывод на единственном удобном объяснении.",
+                    risk_level="medium",
+                    suggested_answer="Назвать 1-2 альтернативы и объяснить, почему текущий вывод всё равно устойчив.",
+                    how_to_improve_material="Добавить один абзац про альтернативы, ограничения или конкурирующие подходы.",
+                ),
+            ]
+        )
+
     if is_pitch:
         questions.extend(
             [
@@ -151,20 +195,35 @@ def _whole_work_questions(
     return questions
 
 
-def _claim_questions(*, question_ids, claims: list[Claim], asked_by: str) -> list[AudienceQuestion]:
+def _claim_questions(
+    *,
+    question_ids,
+    claims: list[Claim],
+    asked_by: str,
+    audience_knowledge_level: int,
+) -> list[AudienceQuestion]:
     risky_claims = sorted(claims, key=lambda claim: _risk_rank(claim.risk_level), reverse=True)[:3]
     questions: list[AudienceQuestion] = []
 
     for claim in risky_claims:
+        if audience_knowledge_level <= 2:
+            question_text = f"Как простыми словами объяснить и подтвердить утверждение: «{claim.text}»?"
+            answer_text = "Сначала объяснить смысл тезиса без терминов, затем назвать подтверждение из материала или честно сказать, что нужно добавить."
+        elif audience_knowledge_level >= 4:
+            question_text = f"Какая методика, источник или ограничение поддерживает утверждение: «{claim.text}»?"
+            answer_text = "Показать доказательство, границы применимости и не делать вывод шире имеющихся данных."
+        else:
+            question_text = f"На чём основано утверждение: «{claim.text}»?"
+            answer_text = "Честно указать, чем это подтверждается внутри материала, или признать, какое доказательство нужно добавить."
         questions.append(
             AudienceQuestion(
                 id=f"question_{next(question_ids)}",
-                question=f"На чём основано утверждение: «{claim.text}»?",
+                question=question_text,
                 asked_by=asked_by,
                 category="Проблемное место: доказательность",
                 why_asked=claim.explanation,
                 risk_level=claim.risk_level,
-                suggested_answer="Честно указать, чем это подтверждается внутри материала, или признать, какое доказательство нужно добавить.",
+                suggested_answer=answer_text,
                 how_to_improve_material=claim.recommendation,
             )
         )

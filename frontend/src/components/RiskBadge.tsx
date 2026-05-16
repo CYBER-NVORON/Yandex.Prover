@@ -12,7 +12,7 @@ const evidenceLabels: Record<EvidenceStatus, string> = {
   weak_argument: 'слабый аргумент',
   too_strong: 'слишком сильный вывод',
   unverifiable_from_text: 'не проверить по тексту',
-  ok: 'ok',
+  ok: 'достаточно',
 };
 
 const riskClasses: Record<RiskLevel, string> = {

@@ -1,9 +1,20 @@
-import type { Claim } from '../api/types';
+import type { Claim, ClaimType } from '../api/types';
 import { RiskBadge } from './RiskBadge';
 
 interface ClaimsTableProps {
   claims: Claim[];
 }
+
+const claimTypeLabels: Record<ClaimType, string> = {
+  fact: 'факт',
+  number: 'число',
+  comparison: 'сравнение',
+  causality: 'причинно-следственная связь',
+  generalization: 'обобщение',
+  opinion: 'мнение',
+  definition: 'определение',
+  unsupported_conclusion: 'вывод без опоры',
+};
 
 export function ClaimsTable({ claims }: ClaimsTableProps) {
   return (
@@ -22,7 +33,7 @@ export function ClaimsTable({ claims }: ClaimsTableProps) {
           {claims.map((claim) => (
             <tr key={claim.id} className="border-t border-[#e8e0cf] align-top">
               <td className="max-w-md p-3 font-semibold">{claim.text}</td>
-              <td className="p-3">{claim.claim_type}</td>
+              <td className="p-3">{claimTypeLabels[claim.claim_type]}</td>
               <td className="p-3">
                 <RiskBadge evidence={claim.evidence_status} />
               </td>

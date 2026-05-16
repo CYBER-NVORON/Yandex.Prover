@@ -38,7 +38,7 @@ export function ReportPanel({ analysisId }: ReportPanelProps) {
           onClick={() => void downloadReport(analysisId)}
         >
           <Download className="h-5 w-5" aria-hidden="true" />
-          Скачать report.md
+          Скачать отчёт
         </button>
         <button
           type="button"

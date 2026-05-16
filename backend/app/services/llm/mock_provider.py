@@ -10,6 +10,7 @@ from app.services.question_generator import build_audience_questions, build_stre
 from app.services.recommendation_engine import build_improvement_plan, build_recommendations, build_weaknesses
 from app.schemas import AnalysisResult, Claim, ScoringBreakdown, StructureAnalysis
 from app.services.scoring import score_from_breakdown
+from app.services.contextual_analysis import audience_knowledge_label, build_audience_adaptation_notes
 
 
 class MockLLMProvider(LLMProvider):
@@ -22,6 +23,11 @@ class MockLLMProvider(LLMProvider):
         filename: str,
         material_type: str,
         audience_type: str,
+        audience_knowledge_level: int = 3,
+        regulation_text: str | None = None,
+        benchmark_text: str | None = None,
+        regulation_filename: str | None = None,
+        benchmark_filename: str | None = None,
     ) -> AnalysisResult:
         preprocessed = preprocess_document(text)
         clean_text = self._normalize(preprocessed.clean_text or preprocessed.analysis_text or text)
@@ -32,16 +38,17 @@ class MockLLMProvider(LLMProvider):
         main_idea = self._detect_main_idea(clean_text, material_type, preprocessed)
         title = self._build_title(filename, material_type, preprocessed)
         structure = self._build_structure(clean_text, analysis_text, main_idea, material_type, audience_type, preprocessed)
-        scoring = self._score(clean_text, claims, material_type, audience_type, structure)
+        scoring = self._score(clean_text, claims, material_type, audience_type, structure, audience_knowledge_level)
         score = score_from_breakdown(scoring)
         strengths = self._build_strengths(clean_text, material_type, audience_type, preprocessed)
         weaknesses = build_weaknesses(claims, material_type, audience_type)
-        recommendations = build_recommendations(claims, weaknesses)
+        recommendations = build_recommendations(claims, weaknesses, audience_knowledge_level)
         questions = build_audience_questions(
             claims=claims,
             weaknesses=weaknesses,
             audience_type=audience_type,
             material_type=material_type,
+            audience_knowledge_level=audience_knowledge_level,
         )
         improvement_plan = build_improvement_plan(recommendations, claims)
         stress_test = build_stress_test(questions, weaknesses)
@@ -58,6 +65,9 @@ class MockLLMProvider(LLMProvider):
             filename=filename,
             material_type=material_type,
             audience_type=audience_type,
+            audience_knowledge_level=audience_knowledge_level,
+            audience_knowledge_label=audience_knowledge_label(audience_knowledge_level),
+            audience_adaptation_notes=build_audience_adaptation_notes(audience_knowledge_level),
             provider_name="mock",
             provider_model="mock",
             provider_response_id=None,
@@ -189,12 +199,15 @@ class MockLLMProvider(LLMProvider):
         material_type: str,
         audience_type: str,
         structure: StructureAnalysis,
+        audience_knowledge_level: int,
     ) -> ScoringBreakdown:
         high_risk = sum(1 for claim in claims if claim.risk_level == "high")
         medium_risk = sum(1 for claim in claims if claim.risk_level == "medium")
         has_metrics = bool(re.search(r"\d", text))
         has_audience = audience_type.lower() in text.lower()
         is_pitch = "питч" in material_type.lower()
+        long_sentences = self._has_long_sentences(text)
+        has_method_context = any(marker in text.lower() for marker in ("метод", "огранич", "альтернатив", "источник"))
 
         clarity = structure.clarity_score
         structure_score = structure.logic_quality_score
@@ -211,6 +224,19 @@ class MockLLMProvider(LLMProvider):
             argument += 3
             readiness += 2
 
+        if audience_knowledge_level <= 2:
+            if long_sentences:
+                audience -= 8
+                clarity -= 4
+            if "термин" in text.lower() or re.search(r"\b[A-ZА-ЯЁ]{2,}\b", text):
+                audience -= 4
+        elif audience_knowledge_level >= 4:
+            if not has_method_context:
+                audience -= 8
+                readiness -= 5
+            if evidence < 70:
+                audience -= 4
+
         return ScoringBreakdown(
             clarity_score=max(0, min(100, clarity)),
             structure_score=max(0, min(100, structure_score)),
@@ -220,6 +246,13 @@ class MockLLMProvider(LLMProvider):
             question_readiness_score=max(0, min(100, readiness)),
             explanation="Оценка рассчитана по шести критериям MVP: ясность, структура, аргументы, доказательность, понятность для аудитории и готовность к вопросам.",
         )
+
+    def _has_long_sentences(self, text: str) -> bool:
+        sentences = split_sentences(text)
+        if not sentences:
+            return False
+        long_count = sum(1 for sentence in sentences if len(sentence.split()) > 24)
+        return long_count >= max(1, len(sentences) // 4)
 
     def _build_strengths(
         self,

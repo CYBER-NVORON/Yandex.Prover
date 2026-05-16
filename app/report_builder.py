@@ -3,6 +3,37 @@ from __future__ import annotations
 from app.schemas import AnalysisResult
 
 
+RISK_LABELS = {
+    "low": "низкий",
+    "medium": "средний",
+    "high": "высокий",
+}
+
+EVIDENCE_LABELS = {
+    "supported_by_text": "подтверждено текстом",
+    "needs_source": "нужен источник",
+    "weak_argument": "слабый аргумент",
+    "too_strong": "слишком широкий вывод",
+    "unverifiable_from_text": "не проверить по тексту",
+    "ok": "достаточно",
+}
+
+CLAIM_TYPE_LABELS = {
+    "fact": "факт",
+    "number": "число",
+    "comparison": "сравнение",
+    "causality": "причинно-следственная связь",
+    "generalization": "обобщение",
+    "opinion": "мнение",
+    "definition": "определение",
+    "unsupported_conclusion": "вывод без опоры",
+}
+
+
+def _label(labels: dict[str, str], value: str) -> str:
+    return labels.get(value, value)
+
+
 def _bullets(items: list[str]) -> str:
     if not items:
         return "- Нет данных."
@@ -16,13 +47,13 @@ def build_markdown_report(result: AnalysisResult) -> str:
     ]
     for claim in result.claims:
         claims_rows.append(
-            f"| {claim.text} | {claim.claim_type} | {claim.evidence_status} | {claim.risk_level} | {claim.recommendation} |"
+            f"| {claim.text} | {_label(CLAIM_TYPE_LABELS, claim.claim_type)} | {_label(EVIDENCE_LABELS, claim.evidence_status)} | {_label(RISK_LABELS, claim.risk_level)} | {claim.recommendation} |"
         )
 
     questions = []
     answers = []
     for question in result.audience_questions:
-        questions.append(f"- **{question.question}** ({question.asked_by}, риск: {question.risk_level})")
+        questions.append(f"- **{question.question}** ({question.asked_by}, риск: {_label(RISK_LABELS, question.risk_level)})")
         answers.append(f"- **{question.question}**\n  Ответ: {question.suggested_answer}")
 
     weaknesses = [
@@ -38,14 +69,12 @@ def build_markdown_report(result: AnalysisResult) -> str:
 ## 2. Индекс убедительности
 **{result.persuasiveness_score}/100**
 
-## 3. LLM provider
-Provider: {result.provider_name}
+## 3. Контекст анализа
+Тип материала: {result.material_type}
 
-Model: {result.provider_model}
+Аудитория: {result.audience_type}
 
-Response ID: {result.provider_response_id or "-"}
-
-Mock mode: {"yes" if result.is_mock else "no"}
+ИИ-анализ выполнен только по загруженному материалу, без внешнего поиска.
 
 ## 4. Краткое резюме
 {result.summary}

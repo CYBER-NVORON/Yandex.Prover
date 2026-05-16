@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { AnalysisResult, AnalysisSummary } from './api/types';
+import type { AnalysisResult, AnalysisSummary, UploadAnalysisPayload } from './api/types';
 import { getAnalyses, getAnalysis, uploadAnalysis } from './api/client';
 import { AnalysisDashboard } from './components/AnalysisDashboard';
 import { ErrorState } from './components/ErrorState';
@@ -26,11 +26,11 @@ export default function App() {
     void refreshHistory();
   }, []);
 
-  async function handleUpload(payload: { file: File; title: string; materialType: string; audienceType: string }) {
+  async function handleUpload(payload: UploadAnalysisPayload) {
     setLoading(true);
     setError(null);
     try {
-      const response = await uploadAnalysis(payload.file, payload.materialType, payload.audienceType, payload.title);
+      const response = await uploadAnalysis(payload);
       setResult(response.result);
       await refreshHistory();
     } catch (caught: unknown) {

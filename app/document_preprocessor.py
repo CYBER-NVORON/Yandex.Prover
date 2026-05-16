@@ -210,13 +210,13 @@ def preprocess_document(raw_text: str) -> PreprocessedDocument:
     if not analysis_text:
         warnings.append("Не удалось выделить основной текст для анализа.")
     if title_page_end > 0:
-        warnings.append("Титульный лист исключён из анализа claims.")
+        warnings.append("Титульный лист исключён из анализа утверждений.")
     if toc_lines:
-        warnings.append("Содержание исключено из анализа claims.")
+        warnings.append("Содержание исключено из анализа утверждений.")
     if references_lines:
-        warnings.append("Список литературы сохранён отдельно и исключён из claims.")
+        warnings.append("Список литературы сохранён отдельно и исключён из карты доказательности.")
     if appendices_lines:
-        warnings.append("Приложения сохранены отдельно и исключены из claims.")
+        warnings.append("Приложения сохранены отдельно и исключены из карты доказательности.")
 
     return PreprocessedDocument(
         title=title,

@@ -72,7 +72,24 @@ def build_weaknesses(claims: list[Claim], material_type: str, audience_type: str
     return weaknesses[:5]
 
 
-def build_recommendations(claims: list[Claim], weaknesses: list[Weakness]) -> list[Recommendation]:
+def build_recommendations(
+    claims: list[Claim],
+    weaknesses: list[Weakness],
+    audience_knowledge_level: int = 3,
+) -> list[Recommendation]:
+    if audience_knowledge_level <= 2:
+        audience_problem = "Сложные термины и контекст могут быть непонятны неподготовленной аудитории."
+        audience_action = "При первом упоминании 2-3 ключевых терминов добавить короткое объяснение и простой пример."
+        audience_effect = "Аудитория быстрее поймёт смысл работы и будет задавать вопросы по сути, а не по терминологии."
+    elif audience_knowledge_level >= 4:
+        audience_problem = "Подготовленная аудитория будет строже проверять метод, ограничения и точность формулировок."
+        audience_action = "Добавить короткое обоснование метода, границы вывода и альтернативное объяснение, которое вы учитывали."
+        audience_effect = "Материал станет устойчивее к экспертным вопросам без переписывания основной идеи."
+    else:
+        audience_problem = "Не все термины и критерии оценки очевидны выбранной аудитории."
+        audience_action = "Перед первым сложным термином добавить короткое определение и указать, почему этот критерий важен."
+        audience_effect = "Снизится риск уточняющих вопросов, не связанных с сутью идеи."
+
     recommendations = [
         Recommendation(
             id="rec_1",
@@ -102,9 +119,9 @@ def build_recommendations(claims: list[Claim], weaknesses: list[Weakness]) -> li
             id="rec_4",
             priority="medium",
             category="Аудитория",
-            problem="Не все термины и критерии оценки очевидны выбранной аудитории.",
-            action="Перед первым сложным термином добавить короткое определение и указать, почему этот критерий важен.",
-            expected_effect="Снизится риск уточняющих вопросов, не связанных с сутью идеи.",
+            problem=audience_problem,
+            action=audience_action,
+            expected_effect=audience_effect,
         ),
         Recommendation(
             id="rec_5",

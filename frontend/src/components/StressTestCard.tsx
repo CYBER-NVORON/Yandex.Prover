@@ -1,4 +1,4 @@
-import { Flame } from 'lucide-react';
+import { CircleHelp } from 'lucide-react';
 import type { StressTest } from '../api/types';
 
 interface StressTestCardProps {
@@ -7,13 +7,13 @@ interface StressTestCardProps {
 
 export function StressTestCard({ stressTest }: StressTestCardProps) {
   return (
-    <article className="rounded-lg bg-[#101114] p-6 text-white shadow-[0_18px_45px_rgba(16,17,20,0.16)]">
+    <article className="rounded-lg border border-[#d7e3dc] bg-[#f5fbf7] p-6 shadow-[0_10px_26px_rgba(16,17,20,0.05)]">
       <div className="flex items-center gap-3">
-        <Flame className="h-7 w-7 text-yolk" aria-hidden="true" />
-        <h2 className="text-2xl font-black">Разнеси мою идею</h2>
+        <CircleHelp className="h-7 w-7 text-[#3f6650]" aria-hidden="true" />
+        <h2 className="text-2xl font-black">Самый важный вопрос</h2>
       </div>
-      <div className="mt-6 rounded-lg border border-[#facc15] bg-white p-5 text-ink">
-        <div className="text-xs font-black uppercase text-[#60616a]">Самый опасный вопрос</div>
+      <div className="mt-6 rounded-lg border border-[#d7e3dc] bg-white p-5 text-ink">
+        <div className="text-xs font-black uppercase text-[#60616a]">Вопрос, к которому стоит подготовиться</div>
         <p className="mt-2 text-2xl font-black leading-snug">{stressTest.most_dangerous_question}</p>
       </div>
       <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -28,9 +28,9 @@ export function StressTestCard({ stressTest }: StressTestCardProps) {
 
 function InfoBlock({ title, text }: { title: string; text: string }) {
   return (
-    <div className="rounded-lg border border-white/20 bg-white/5 p-4">
-      <div className="text-xs font-black uppercase text-yolk">{title}</div>
-      <p className="mt-2 text-sm font-semibold leading-6">{text}</p>
+    <div className="rounded-lg border border-[#d7e3dc] bg-white p-4">
+      <div className="text-xs font-black uppercase text-[#3f6650]">{title}</div>
+      <p className="mt-2 text-sm font-semibold leading-6 text-[#303138]">{text}</p>
     </div>
   );
 }

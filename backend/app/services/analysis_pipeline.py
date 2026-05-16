@@ -1,6 +1,14 @@
 ﻿from __future__ import annotations
 
 from app.config import Settings, get_settings
+from app.services.contextual_analysis import (
+    audience_knowledge_label,
+    build_audience_adaptation_notes,
+    build_benchmark_comparison,
+    build_overthinking_guard,
+    build_regulation_analysis,
+    normalize_audience_knowledge_level,
+)
 from app.services.document_preprocessor import PreprocessedDocument, filter_noise_claims, preprocess_document
 from app.services.llm import LLMProvider, MockLLMProvider, YandexAIProvider
 from app.services.llm.base import LLMProviderError
@@ -29,10 +37,16 @@ def analyze_text(
     filename: str,
     material_type: str,
     audience_type: str,
+    audience_knowledge_level: int = 3,
+    regulation_text: str | None = None,
+    regulation_filename: str | None = None,
+    benchmark_text: str | None = None,
+    benchmark_filename: str | None = None,
     provider: LLMProvider | None = None,
 ) -> AnalysisResult:
     settings = get_settings()
     provider = provider or build_provider(settings)
+    audience_knowledge_level = normalize_audience_knowledge_level(audience_knowledge_level)
     preprocessed = preprocess_document(
         text,
         soft_char_limit=settings.soft_char_limit,
@@ -44,8 +58,22 @@ def analyze_text(
         filename=filename,
         material_type=material_type,
         audience_type=audience_type,
+        audience_knowledge_level=audience_knowledge_level,
+        regulation_text=_prompt_context(regulation_text, settings.soft_char_limit),
+        benchmark_text=_prompt_context(benchmark_text, settings.soft_char_limit),
+        regulation_filename=regulation_filename,
+        benchmark_filename=benchmark_filename,
     )
-    return _apply_preprocessing_context(result, preprocessed)
+    result = _apply_preprocessing_context(result, preprocessed)
+    return _apply_contextual_features(
+        result,
+        material_text=preprocessed.clean_text or analysis_text,
+        regulation_text=regulation_text,
+        regulation_filename=regulation_filename,
+        benchmark_text=benchmark_text,
+        benchmark_filename=benchmark_filename,
+        audience_knowledge_level=audience_knowledge_level,
+    )
 
 
 def _apply_preprocessing_context(
@@ -68,6 +96,56 @@ def _apply_preprocessing_context(
         )
 
     return result
+
+
+def _apply_contextual_features(
+    result: AnalysisResult,
+    *,
+    material_text: str,
+    regulation_text: str | None,
+    regulation_filename: str | None,
+    benchmark_text: str | None,
+    benchmark_filename: str | None,
+    audience_knowledge_level: int,
+) -> AnalysisResult:
+    result.audience_knowledge_level = audience_knowledge_level
+    result.audience_knowledge_label = audience_knowledge_label(audience_knowledge_level)
+    result.audience_adaptation_notes = build_audience_adaptation_notes(audience_knowledge_level)
+
+    if regulation_text and regulation_text.strip():
+        result.regulation_analysis = build_regulation_analysis(
+            material_text=material_text,
+            regulation_text=regulation_text,
+            regulation_filename=regulation_filename or "regulation.txt",
+        )
+    else:
+        result.regulation_analysis = None
+
+    if benchmark_text and benchmark_text.strip():
+        result.benchmark_comparison = build_benchmark_comparison(
+            material_text=material_text,
+            benchmark_text=benchmark_text,
+            benchmark_filename=benchmark_filename or "benchmark.txt",
+        )
+    else:
+        result.benchmark_comparison = None
+
+    result.overthinking_guard = build_overthinking_guard(
+        result,
+        result.regulation_analysis,
+        result.benchmark_comparison,
+        audience_knowledge_level,
+    )
+    return result
+
+
+def _prompt_context(text: str | None, limit: int) -> str | None:
+    if not text:
+        return None
+    text = text.strip()
+    if len(text) <= limit:
+        return text
+    return text[:limit].rstrip()
 
 
 def _contains_any(items: list[str], needles: tuple[str, ...]) -> bool:

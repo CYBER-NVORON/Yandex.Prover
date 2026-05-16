@@ -27,6 +27,10 @@ def save_analysis_result(db: Session, result: AnalysisResult) -> AnalysisRun:
         provider_model=result.provider_model,
         provider_response_id=result.provider_response_id,
         is_mock=result.is_mock,
+        has_regulation=result.regulation_analysis is not None,
+        has_benchmark=result.benchmark_comparison is not None,
+        audience_knowledge_level=result.audience_knowledge_level,
+        readiness_verdict=result.overthinking_guard.readiness_verdict if result.overthinking_guard else None,
         persuasiveness_score=result.persuasiveness_score,
         result_json=payload,
     )

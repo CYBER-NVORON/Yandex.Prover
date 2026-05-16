@@ -12,6 +12,7 @@ DEFAULT_YANDEX_MODEL = "aliceai-llm/latest"
 SOFT_CHAR_LIMIT = 50_000
 HARD_CHAR_LIMIT = 120_000
 MAX_CHARS_FOR_ANALYSIS = HARD_CHAR_LIMIT
+PRODUCTION_ENVS = {"production", "prod"}
 
 
 def normalize_yandex_model(model: str) -> str:
@@ -36,8 +37,8 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+psycopg://dokazatel:dokazatel@postgres:5432/dokazatel"
 
-    llm_provider: str = "mock"
-    allow_mock_fallback: bool = True
+    llm_provider: str = "yandex"
+    allow_mock_fallback: bool = False
 
     yandex_api_key: str = ""
     yandex_folder_id: str = ""
@@ -64,9 +65,24 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     settings = Settings()
-    settings.llm_provider = settings.llm_provider.strip().lower() or "mock"
+    settings.app_env = settings.app_env.strip().lower() or "development"
+    settings.llm_provider = settings.llm_provider.strip().lower() or "yandex"
     settings.yandex_model = normalize_yandex_model(settings.yandex_model)
     settings.yandex_base_url = settings.yandex_base_url.strip() or DEFAULT_YANDEX_BASE_URL
     if settings.hard_char_limit > settings.max_chars_for_analysis:
         settings.hard_char_limit = settings.max_chars_for_analysis
+    validate_runtime_settings(settings)
     return settings
+
+
+def validate_runtime_settings(settings: Settings) -> None:
+    if settings.app_env not in PRODUCTION_ENVS:
+        return
+    if settings.llm_provider == "mock":
+        raise ValueError("LLM_PROVIDER=mock запрещён в production. Используйте LLM_PROVIDER=yandex.")
+    if settings.allow_mock_fallback:
+        raise ValueError("ALLOW_MOCK_FALLBACK=true запрещён в production.")
+    if settings.llm_provider in {"yandex", "yandexgpt", "alice"} and (
+        not settings.yandex_api_key or not settings.yandex_folder_id
+    ):
+        raise ValueError("Для production нужны YANDEX_API_KEY и YANDEX_FOLDER_ID.")

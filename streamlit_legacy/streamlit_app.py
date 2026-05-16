@@ -315,7 +315,7 @@ def render_hero() -> None:
     st.markdown(
         """
         <section class="hero">
-            <div class="hero-badge">AI-рецензент для предзащиты</div>
+            <div class="hero-badge">ИИ-рецензент для предзащиты</div>
             <h1 class="hero-title">Доказатель</h1>
             <p class="hero-subtitle">Проверь, выдержит ли твоя идея вопросы аудитории.</p>
             <p class="hero-note">Сервис анализирует готовый материал, находит слабые места до того, как их найдёт аудитория, и помогает подготовить доказательную защиту.</p>
@@ -589,9 +589,9 @@ def render_stress_test(result: AnalysisResult) -> None:
 def render_report(result: AnalysisResult) -> None:
     report = build_markdown_report(result)
     st.download_button(
-        "Скачать report.md",
+        "Скачать отчёт",
         data=report.encode("utf-8"),
-        file_name="report.md",
+        file_name="otchet.md",
         mime="text/markdown",
         width="stretch",
     )
@@ -631,7 +631,7 @@ def render_dashboard(result: AnalysisResult) -> None:
 
 def render_provider_notice(result: AnalysisResult) -> None:
     if result.is_mock:
-        st.warning("Анализ выполнен в mock mode. Реальная Yandex/Alice AI модель не отвечала.")
+        st.warning("Анализ выполнен в демонстрационном режиме. Реальная модель Алисы не отвечала.")
     elif result.provider_name == "yandex":
         st.success(f"Ответ получен от Yandex AI: {result.provider_model}")
 
@@ -689,10 +689,10 @@ def main() -> None:
     render_product_explanation()
 
     with st.sidebar:
-        st.markdown("**Режим LLM**")
-        st.write("Локальный demo mode" if settings.llm_provider == "mock" else settings.llm_provider)
+        st.markdown("**Режим модели**")
+        st.write("Локальный демонстрационный режим" if settings.llm_provider == "mock" else settings.llm_provider)
         if settings.llm_provider == "mock":
-            st.caption("Mock mode подходит для хакатонного демо без API-ключей.")
+            st.caption("Демонстрационный режим подходит для хакатонного демо без API-ключей.")
         st.markdown("**Хранилище**")
         st.caption(str(settings.database_path))
         if st.button("Сбросить результат", width="stretch"):
@@ -755,17 +755,17 @@ def main() -> None:
 
     result = st.session_state.get("analysis_result")
     with st.sidebar:
-        st.markdown("**LLM response**")
+        st.markdown("**Ответ модели**")
         if isinstance(result, AnalysisResult):
-            st.caption(f"Provider: {result.provider_name}")
-            st.caption(f"Model: {result.provider_model}")
-            st.caption(f"Response ID: {result.provider_response_id or '-'}")
-            st.caption(f"Mock mode: {'yes' if result.is_mock else 'no'}")
+            st.caption(f"Поставщик: {result.provider_name}")
+            st.caption(f"Модель: {result.provider_model}")
+            st.caption(f"ID ответа: {result.provider_response_id or '-'}")
+            st.caption(f"Демо-режим: {'да' if result.is_mock else 'нет'}")
         else:
-            st.caption("Provider: -")
-            st.caption("Model: -")
-            st.caption("Response ID: -")
-            st.caption("Mock mode: -")
+            st.caption("Поставщик: -")
+            st.caption("Модель: -")
+            st.caption("ID ответа: -")
+            st.caption("Демо-режим: -")
     if isinstance(result, AnalysisResult):
         render_provider_notice(result)
         render_dashboard(result)

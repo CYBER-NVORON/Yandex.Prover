@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.schemas import AnalysisCreateResponse, AnalysisResult, AnalysisSummary
 from app.services.analysis_pipeline import analyze_text
-from app.services.document_loader import DocumentLoadError, load_document_from_bytes
+from app.services.document_loader import DocumentLoadError, LoadedDocument, load_document_from_bytes
 from app.services.llm.base import InvalidLLMResponseError, LLMProviderError
 from app.services.storage_service import (
     StorageError,
@@ -18,26 +18,35 @@ from app.services.storage_service import (
     save_analysis_result,
 )
 
-
 router = APIRouter(prefix="/api/analyses", tags=["analyses"])
 
 
 @router.post("", response_model=AnalysisCreateResponse)
 async def create_analysis(
     file: UploadFile = File(...),
+    regulation_file: UploadFile | None = File(None),
+    benchmark_file: UploadFile | None = File(None),
     material_type: str = Form(...),
     audience_type: str = Form(...),
+    audience_knowledge_level: int = Form(3),
     title: str | None = Form(None),
     db: Session = Depends(get_db),
 ) -> AnalysisCreateResponse:
     content = await file.read()
     try:
         loaded = load_document_from_bytes(file.filename or "material.txt", content)
+        regulation = await _load_optional_upload(regulation_file)
+        benchmark = await _load_optional_upload(benchmark_file)
         result = analyze_text(
             text=loaded.text,
             filename=loaded.filename,
             material_type=material_type,
             audience_type=audience_type,
+            audience_knowledge_level=audience_knowledge_level,
+            regulation_text=regulation.text if regulation else None,
+            regulation_filename=regulation.filename if regulation else None,
+            benchmark_text=benchmark.text if benchmark else None,
+            benchmark_filename=benchmark.filename if benchmark else None,
         )
         result.id = str(uuid4())
         if title and title.strip():
@@ -68,6 +77,10 @@ def list_analyses(db: Session = Depends(get_db)) -> list[AnalysisSummary]:
             filename=run.filename,
             material_type=run.material_type,
             audience_type=run.audience_type,
+            audience_knowledge_level=run.audience_knowledge_level,
+            has_regulation=run.has_regulation,
+            has_benchmark=run.has_benchmark,
+            readiness_verdict=run.readiness_verdict,
             persuasiveness_score=run.persuasiveness_score,
             provider_name=run.provider_name,
             is_mock=run.is_mock,
@@ -75,6 +88,13 @@ def list_analyses(db: Session = Depends(get_db)) -> list[AnalysisSummary]:
         )
         for run in runs
     ]
+
+
+async def _load_optional_upload(upload: UploadFile | None) -> LoadedDocument | None:
+    if upload is None or not upload.filename:
+        return None
+    content = await upload.read()
+    return load_document_from_bytes(upload.filename, content)
 
 
 @router.get("/{analysis_id}", response_model=AnalysisResult)

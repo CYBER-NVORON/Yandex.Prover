@@ -137,9 +137,10 @@ def test_vorona_voron_pipeline_filters_noise_claims_and_keeps_meaningful_claims(
     assert "вред от ворон незначительный по сравнению с пользой" in claims_text
 
     report_text = build_markdown_report(result).lower()
-    assert "provider: mock" in report_text
-    assert "model: mock" in report_text
-    assert "mock mode: yes" in report_text
+    assert "provider: mock" not in report_text
+    assert "model: mock" not in report_text
+    assert "mock mode" not in report_text
+    assert "ии-анализ выполнен только по загруженному материалу" in report_text
     assert "инвестор" not in report_text
     assert "жюри" not in report_text
     assert "бизнес-ценность" not in report_text

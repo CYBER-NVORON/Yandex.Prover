@@ -1,4 +1,4 @@
-import type { AnalysisCreateResponse, AnalysisResult, AnalysisSummary, ReportResponse } from './types';
+import type { AnalysisCreateResponse, AnalysisResult, AnalysisSummary, ReportResponse, UploadAnalysisPayload } from './types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
 
@@ -15,7 +15,7 @@ async function parseError(response: Response): Promise<string> {
   } catch {
     // Response body is not JSON.
   }
-  return `Ошибка API: ${response.status}`;
+  return `Ошибка сервера: ${response.status}`;
 }
 
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
@@ -26,18 +26,17 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   return (await response.json()) as T;
 }
 
-export async function uploadAnalysis(
-  file: File,
-  materialType: string,
-  audienceType: string,
-  title?: string,
-): Promise<AnalysisCreateResponse> {
+export async function uploadAnalysis(payload: UploadAnalysisPayload): Promise<AnalysisCreateResponse> {
   const formData = new FormData();
-  formData.append('file', file);
-  formData.append('material_type', materialType);
-  formData.append('audience_type', audienceType);
-  if (title?.trim()) {
-    formData.append('title', title.trim());
+  formData.append('file', payload.file);
+  formData.append('material_type', payload.materialType);
+  formData.append('audience_type', payload.audienceType);
+  formData.append('audience_knowledge_level', String(payload.audienceKnowledgeLevel));
+  if (payload.regulationFile) {
+    formData.append('regulation_file', payload.regulationFile);
+  }
+  if (payload.benchmarkFile) {
+    formData.append('benchmark_file', payload.benchmarkFile);
   }
 
   return requestJson<AnalysisCreateResponse>('/api/analyses', {
@@ -67,7 +66,7 @@ export async function downloadReport(id: string): Promise<void> {
   const href = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = href;
-  link.download = 'report.md';
+  link.download = 'otchet.md';
   document.body.appendChild(link);
   link.click();
   link.remove();
