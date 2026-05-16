@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #101114;
+  background: #f6f3ea;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  --page: #f6f3ea;
+  --paper: #ffffff;
+  --ink: #101114;
+  --muted: #60616a;
+  --line: #e8e0cf;
+  --accent: #facc15;
+  --accent-strong: #d97706;
+}
+
+html,
+body {
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--page);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+  outline: 3px solid #facc15;
+  outline-offset: 3px;
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+@layer components {
+  .app-shell {
+    @apply min-h-screen w-full px-4 py-5 text-ink md:px-6;
+  }
+
+  .app-card {
+    @apply rounded-lg border border-[#e8e0cf] bg-white shadow-[0_18px_45px_rgba(16,17,20,0.08)];
+  }
+
+  .soft-card {
+    @apply rounded-lg border border-[#e8e0cf] bg-white shadow-[0_10px_26px_rgba(16,17,20,0.05)];
+  }
+
+  .quiet-card {
+    @apply rounded-lg border border-[#e8e0cf] bg-white;
+  }
+
+  .accent-card {
+    @apply rounded-lg border border-[#e8e0cf] border-l-[5px] border-l-[#facc15] bg-white;
+  }
+
+  .field {
+    @apply w-full rounded-lg border border-[#e8e0cf] bg-white px-4 py-3 font-semibold text-ink shadow-[0_8px_22px_rgba(16,17,20,0.04)] placeholder:text-zinc-400;
+  }
+
+  .primary-button {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-[#f0d24a] bg-[#facc15] px-5 py-3 font-bold text-[#201a05] shadow-[0_8px_20px_rgba(217,119,6,0.16)] transition hover:bg-[#f6d34b] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .secondary-button {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-[#e8e0cf] bg-white px-5 py-3 font-bold text-ink transition hover:bg-[#fff8df] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .section-title {
+    @apply text-xl font-extrabold tracking-normal text-ink;
+  }
+
+  .muted-text {
+    @apply text-[#60616a];
+  }
+}
