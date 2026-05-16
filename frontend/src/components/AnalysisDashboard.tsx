@@ -481,9 +481,9 @@ function Warnings({ warnings }: { warnings: string[] }) {
 
 function localizeWarning(warning: string) {
   return warning
-    .replaceAll('анализа claims', 'анализа утверждений')
-    .replaceAll('из claims', 'из карты доказательности')
-    .replaceAll('claims', 'утверждений');
+    .replace(/анализа claims/g, 'анализа утверждений')
+    .replace(/из claims/g, 'из карты доказательности')
+    .replace(/claims/g, 'утверждений');
 }
 
 function TextBox({ title, text, items }: { title: string; text?: string; items?: string[] }) {
